@@ -6,6 +6,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
 
@@ -35,6 +36,7 @@ const reviews = [
 export default function Index() {
   const [selectedPackage, setSelectedPackage] = useState<UCPackage | null>(null);
   const [playerId, setPlayerId] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('sberbank');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
 
@@ -53,13 +55,21 @@ export default function Index() {
       return;
     }
 
+    const paymentNames: { [key: string]: string } = {
+      sberbank: 'Карта Сбербанк',
+      card: 'Банковская карта',
+      wallet: 'Электронный кошелек',
+      crypto: 'Криптовалюта'
+    };
+
     toast({
       title: 'Заказ оформлен! 🎮',
-      description: `${selectedPackage?.amount} UC будут зачислены на ID: ${playerId}`,
+      description: `${selectedPackage?.amount} UC будут зачислены на ID: ${playerId}. Оплата: ${paymentNames[paymentMethod]}`,
     });
     
     setIsDialogOpen(false);
     setPlayerId('');
+    setPaymentMethod('sberbank');
     setSelectedPackage(null);
   };
 
@@ -171,6 +181,7 @@ export default function Index() {
                     if (!open) {
                       setIsDialogOpen(false);
                       setPlayerId('');
+                      setPaymentMethod('sberbank');
                     }
                   }}>
                     <DialogTrigger asChild>
@@ -205,6 +216,60 @@ export default function Index() {
                           <p className="text-sm text-muted-foreground">
                             Найти Player ID можно в настройках игры
                           </p>
+                        </div>
+                        <div className="space-y-3">
+                          <Label>Способ оплаты</Label>
+                          <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
+                            <div className="flex items-center space-x-3 border border-border rounded-lg p-3 hover:bg-muted/50 transition-colors cursor-pointer">
+                              <RadioGroupItem value="sberbank" id="sberbank" />
+                              <Label htmlFor="sberbank" className="flex items-center gap-3 cursor-pointer flex-1">
+                                <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
+                                  <Icon name="CreditCard" className="text-white" size={20} />
+                                </div>
+                                <div className="flex-1">
+                                  <div className="font-semibold">Карта Сбербанк</div>
+                                  <div className="text-xs text-muted-foreground">Быстрая оплата</div>
+                                </div>
+                                <Badge className="bg-primary/20 text-primary">Популярно</Badge>
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-3 border border-border rounded-lg p-3 hover:bg-muted/50 transition-colors cursor-pointer">
+                              <RadioGroupItem value="card" id="card" />
+                              <Label htmlFor="card" className="flex items-center gap-3 cursor-pointer flex-1">
+                                <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
+                                  <Icon name="CreditCard" className="text-primary" size={20} />
+                                </div>
+                                <div className="flex-1">
+                                  <div className="font-semibold">Банковская карта</div>
+                                  <div className="text-xs text-muted-foreground">Visa, MasterCard, Мир</div>
+                                </div>
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-3 border border-border rounded-lg p-3 hover:bg-muted/50 transition-colors cursor-pointer">
+                              <RadioGroupItem value="wallet" id="wallet" />
+                              <Label htmlFor="wallet" className="flex items-center gap-3 cursor-pointer flex-1">
+                                <div className="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center">
+                                  <Icon name="Wallet" className="text-secondary" size={20} />
+                                </div>
+                                <div className="flex-1">
+                                  <div className="font-semibold">Электронный кошелек</div>
+                                  <div className="text-xs text-muted-foreground">ЮMoney, QIWI</div>
+                                </div>
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-3 border border-border rounded-lg p-3 hover:bg-muted/50 transition-colors cursor-pointer">
+                              <RadioGroupItem value="crypto" id="crypto" />
+                              <Label htmlFor="crypto" className="flex items-center gap-3 cursor-pointer flex-1">
+                                <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center">
+                                  <Icon name="Bitcoin" className="text-accent" size={20} />
+                                </div>
+                                <div className="flex-1">
+                                  <div className="font-semibold">Криптовалюта</div>
+                                  <div className="text-xs text-muted-foreground">BTC, ETH, USDT</div>
+                                </div>
+                              </Label>
+                            </div>
+                          </RadioGroup>
                         </div>
                         <div className="bg-muted/50 p-4 rounded-lg space-y-2">
                           <div className="flex justify-between">
