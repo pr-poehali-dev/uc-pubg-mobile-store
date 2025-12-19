@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,16 @@ interface UCPackage {
   price: number;
   bonus?: number;
   popular?: boolean;
+}
+
+interface Purchase {
+  id: string;
+  date: string;
+  amount: number;
+  price: number;
+  playerId: string;
+  paymentMethod: string;
+  status: 'completed' | 'pending' | 'failed';
 }
 
 const ucPackages: UCPackage[] = [
@@ -38,7 +48,16 @@ export default function Index() {
   const [playerId, setPlayerId] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('sberbank');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [purchaseHistory, setPurchaseHistory] = useState<Purchase[]>([]);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('ucShopHistory');
+    if (savedHistory) {
+      setPurchaseHistory(JSON.parse(savedHistory));
+    }
+  }, []);
 
   const handleBuyClick = (pkg: UCPackage) => {
     setSelectedPackage(pkg);
@@ -61,6 +80,20 @@ export default function Index() {
       wallet: 'Электронный кошелек',
       crypto: 'Криптовалюта'
     };
+
+    const newPurchase: Purchase = {
+      id: Date.now().toString(),
+      date: new Date().toISOString(),
+      amount: selectedPackage?.amount || 0,
+      price: selectedPackage?.price || 0,
+      playerId: playerId,
+      paymentMethod: paymentNames[paymentMethod],
+      status: 'completed'
+    };
+
+    const updatedHistory = [newPurchase, ...purchaseHistory];
+    setPurchaseHistory(updatedHistory);
+    localStorage.setItem('ucShopHistory', JSON.stringify(updatedHistory));
 
     toast({
       title: 'Заказ оформлен! 🎮',
@@ -91,9 +124,13 @@ export default function Index() {
             <a href="#reviews" className="text-foreground/80 hover:text-primary transition-colors">Отзывы</a>
             <a href="#help" className="text-foreground/80 hover:text-primary transition-colors">Помощь</a>
             <a href="#contacts" className="text-foreground/80 hover:text-primary transition-colors">Контакты</a>
-            <Button className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">
-              <Icon name="ShoppingCart" className="mr-2" size={18} />
-              Корзина
+            <Button 
+              onClick={() => setIsHistoryOpen(true)}
+              variant="outline"
+              className="border-primary text-primary hover:bg-primary/10"
+            >
+              <Icon name="History" className="mr-2" size={18} />
+              История
             </Button>
           </div>
           <Button variant="ghost" className="md:hidden">
@@ -485,6 +522,86 @@ export default function Index() {
           </div>
         </div>
       </footer>
+
+      <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
+        <DialogContent className="sm:max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-bold flex items-center gap-2">
+              <Icon name="History" className="text-primary" size={28} />
+              История покупок
+            </DialogTitle>
+            <DialogDescription>
+              Все ваши покупки UC сохранены в браузере
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-4">
+            {purchaseHistory.length === 0 ? (
+              <div className="text-center py-12">
+                <Icon name="ShoppingBag" className="mx-auto mb-4 text-muted-foreground" size={48} />
+                <p className="text-muted-foreground text-lg">Пока нет покупок</p>
+                <p className="text-sm text-muted-foreground mt-2">Оформите первый заказ!</p>
+              </div>
+            ) : (
+              purchaseHistory.map((purchase) => (
+                <Card key={purchase.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
+                          <Icon name="Zap" className="text-white" size={24} />
+                        </div>
+                        <div>
+                          <div className="font-bold text-lg">{purchase.amount} UC</div>
+                          <div className="text-sm text-muted-foreground">
+                            Player ID: {purchase.playerId}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {new Date(purchase.date).toLocaleDateString('ru-RU', {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-black text-primary">{purchase.price}₽</div>
+                        <div className="text-xs text-muted-foreground mt-1">{purchase.paymentMethod}</div>
+                        <Badge className={`mt-2 ${
+                          purchase.status === 'completed' 
+                            ? 'bg-green-500/20 text-green-500 border-green-500' 
+                            : purchase.status === 'pending'
+                            ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500'
+                            : 'bg-red-500/20 text-red-500 border-red-500'
+                        }`}>
+                          {purchase.status === 'completed' ? 'Завершено' : purchase.status === 'pending' ? 'В обработке' : 'Отменено'}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+          {purchaseHistory.length > 0 && (
+            <div className="border-t border-border pt-4">
+              <div className="flex justify-between items-center">
+                <div className="text-sm text-muted-foreground">
+                  Всего покупок: {purchaseHistory.length}
+                </div>
+                <div className="text-right">
+                  <div className="text-sm text-muted-foreground">Общая сумма</div>
+                  <div className="text-2xl font-black text-primary">
+                    {purchaseHistory.reduce((sum, p) => sum + p.price, 0)}₽
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
