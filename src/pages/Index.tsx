@@ -3,6 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
 
 interface UCPackage {
@@ -29,7 +33,35 @@ const reviews = [
 ];
 
 export default function Index() {
-  const [selectedPackage, setSelectedPackage] = useState<number | null>(null);
+  const [selectedPackage, setSelectedPackage] = useState<UCPackage | null>(null);
+  const [playerId, setPlayerId] = useState('');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
+
+  const handleBuyClick = (pkg: UCPackage) => {
+    setSelectedPackage(pkg);
+    setIsDialogOpen(true);
+  };
+
+  const handlePurchase = () => {
+    if (!playerId || playerId.length < 6) {
+      toast({
+        title: 'Ошибка',
+        description: 'Введите корректный Player ID',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    toast({
+      title: 'Заказ оформлен! 🎮',
+      description: `${selectedPackage?.amount} UC будут зачислены на ID: ${playerId}`,
+    });
+    
+    setIsDialogOpen(false);
+    setPlayerId('');
+    setSelectedPackage(null);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted">
@@ -102,10 +134,9 @@ export default function Index() {
             {ucPackages.map((pkg) => (
               <Card 
                 key={pkg.id}
-                className={`relative overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer ${
+                className={`relative overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl ${
                   pkg.popular ? 'border-primary shadow-lg shadow-primary/50 animate-glow-pulse' : 'border-border'
-                } ${selectedPackage === pkg.id ? 'ring-2 ring-primary' : ''}`}
-                onClick={() => setSelectedPackage(pkg.id)}
+                }`}
               >
                 {pkg.popular && (
                   <div className="absolute top-4 right-4 z-10">
@@ -136,13 +167,72 @@ export default function Index() {
                   <div className="mb-4">
                     <span className="text-4xl font-black text-primary">{pkg.price}₽</span>
                   </div>
-                  <Button 
-                    className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90"
-                    size="lg"
-                  >
-                    <Icon name="ShoppingCart" className="mr-2" size={18} />
-                    Купить
-                  </Button>
+                  <Dialog open={isDialogOpen && selectedPackage?.id === pkg.id} onOpenChange={(open) => {
+                    if (!open) {
+                      setIsDialogOpen(false);
+                      setPlayerId('');
+                    }
+                  }}>
+                    <DialogTrigger asChild>
+                      <Button 
+                        className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90"
+                        size="lg"
+                        onClick={() => handleBuyClick(pkg)}
+                      >
+                        <Icon name="ShoppingCart" className="mr-2" size={18} />
+                        Купить
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle className="text-2xl font-bold">
+                          Покупка {pkg.amount} UC
+                        </DialogTitle>
+                        <DialogDescription>
+                          Введите свой Player ID из PUBG Mobile
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="playerId">Player ID</Label>
+                          <Input
+                            id="playerId"
+                            placeholder="Например: 5123456789"
+                            value={playerId}
+                            onChange={(e) => setPlayerId(e.target.value)}
+                            className="text-lg"
+                          />
+                          <p className="text-sm text-muted-foreground">
+                            Найти Player ID можно в настройках игры
+                          </p>
+                        </div>
+                        <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Количество UC:</span>
+                            <span className="font-bold text-primary">{pkg.amount} UC</span>
+                          </div>
+                          {pkg.bonus && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Бонус:</span>
+                              <span className="font-bold text-secondary">+{pkg.bonus} UC</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between pt-2 border-t border-border">
+                            <span className="font-semibold">Итого:</span>
+                            <span className="text-2xl font-black text-primary">{pkg.price}₽</span>
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={handlePurchase}
+                        className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-lg py-6"
+                        size="lg"
+                      >
+                        <Icon name="Zap" className="mr-2" size={20} />
+                        Оплатить {pkg.price}₽
+                      </Button>
+                    </DialogContent>
+                  </Dialog>
                 </CardContent>
               </Card>
             ))}
