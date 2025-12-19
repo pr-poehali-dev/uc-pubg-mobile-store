@@ -78,27 +78,52 @@ export default function Index() {
       sberbank: 'Карта Сбербанк',
       card: 'Банковская карта',
       wallet: 'Электронный кошелек',
-      crypto: 'Криптовалюта'
+      crypto: 'Криптовалюта',
+      donationalerts: 'DonationAlerts'
     };
 
-    const newPurchase: Purchase = {
-      id: Date.now().toString(),
-      date: new Date().toISOString(),
-      amount: selectedPackage?.amount || 0,
-      price: selectedPackage?.price || 0,
-      playerId: playerId,
-      paymentMethod: paymentNames[paymentMethod],
-      status: 'completed'
-    };
+    if (paymentMethod === 'donationalerts') {
+      const donationUrl = `https://www.donationalerts.com/r/senza123?amount=${selectedPackage?.price}&message=UC%20${selectedPackage?.amount}%20-%20ID:%20${playerId}`;
+      window.open(donationUrl, '_blank');
+      
+      const newPurchase: Purchase = {
+        id: Date.now().toString(),
+        date: new Date().toISOString(),
+        amount: selectedPackage?.amount || 0,
+        price: selectedPackage?.price || 0,
+        playerId: playerId,
+        paymentMethod: paymentNames[paymentMethod],
+        status: 'pending'
+      };
 
-    const updatedHistory = [newPurchase, ...purchaseHistory];
-    setPurchaseHistory(updatedHistory);
-    localStorage.setItem('ucShopHistory', JSON.stringify(updatedHistory));
+      const updatedHistory = [newPurchase, ...purchaseHistory];
+      setPurchaseHistory(updatedHistory);
+      localStorage.setItem('ucShopHistory', JSON.stringify(updatedHistory));
 
-    toast({
-      title: 'Заказ оформлен! 🎮',
-      description: `${selectedPackage?.amount} UC будут зачислены на ID: ${playerId}. Оплата: ${paymentNames[paymentMethod]}`,
-    });
+      toast({
+        title: 'Переход к оплате! 💳',
+        description: `Завершите оплату на DonationAlerts. UC придут после подтверждения.`,
+      });
+    } else {
+      const newPurchase: Purchase = {
+        id: Date.now().toString(),
+        date: new Date().toISOString(),
+        amount: selectedPackage?.amount || 0,
+        price: selectedPackage?.price || 0,
+        playerId: playerId,
+        paymentMethod: paymentNames[paymentMethod],
+        status: 'completed'
+      };
+
+      const updatedHistory = [newPurchase, ...purchaseHistory];
+      setPurchaseHistory(updatedHistory);
+      localStorage.setItem('ucShopHistory', JSON.stringify(updatedHistory));
+
+      toast({
+        title: 'Заказ оформлен! 🎮',
+        description: `${selectedPackage?.amount} UC будут зачислены на ID: ${playerId}. Оплата: ${paymentNames[paymentMethod]}`,
+      });
+    }
     
     setIsDialogOpen(false);
     setPlayerId('');
@@ -304,6 +329,19 @@ export default function Index() {
                                   <div className="font-semibold">Криптовалюта</div>
                                   <div className="text-xs text-muted-foreground">BTC, ETH, USDT</div>
                                 </div>
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-3 border border-border rounded-lg p-3 hover:bg-muted/50 transition-colors cursor-pointer">
+                              <RadioGroupItem value="donationalerts" id="donationalerts" />
+                              <Label htmlFor="donationalerts" className="flex items-center gap-3 cursor-pointer flex-1">
+                                <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
+                                  <Icon name="Heart" className="text-orange-500" size={20} />
+                                </div>
+                                <div className="flex-1">
+                                  <div className="font-semibold">DonationAlerts</div>
+                                  <div className="text-xs text-muted-foreground">Быстрый платеж</div>
+                                </div>
+                                <Badge className="bg-orange-500/20 text-orange-500">Новое</Badge>
                               </Label>
                             </div>
                           </RadioGroup>
