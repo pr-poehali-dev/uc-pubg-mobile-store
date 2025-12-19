@@ -46,7 +46,7 @@ const reviews = [
 export default function Index() {
   const [selectedPackage, setSelectedPackage] = useState<UCPackage | null>(null);
   const [playerId, setPlayerId] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('sberbank');
+  const [paymentMethod, setPaymentMethod] = useState('donationalerts');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [purchaseHistory, setPurchaseHistory] = useState<Purchase[]>([]);
@@ -74,60 +74,30 @@ export default function Index() {
       return;
     }
 
-    const paymentNames: { [key: string]: string } = {
-      sberbank: 'Карта Сбербанк',
-      card: 'Банковская карта',
-      wallet: 'Электронный кошелек',
-      crypto: 'Криптовалюта',
-      donationalerts: 'DonationAlerts'
+    const donationUrl = `https://www.donationalerts.com/r/senza123?amount=${selectedPackage?.price}&message=UC%20${selectedPackage?.amount}%20-%20ID:%20${playerId}`;
+    window.open(donationUrl, '_blank');
+    
+    const newPurchase: Purchase = {
+      id: Date.now().toString(),
+      date: new Date().toISOString(),
+      amount: selectedPackage?.amount || 0,
+      price: selectedPackage?.price || 0,
+      playerId: playerId,
+      paymentMethod: 'DonationAlerts',
+      status: 'pending'
     };
 
-    if (paymentMethod === 'donationalerts') {
-      const donationUrl = `https://www.donationalerts.com/r/senza123?amount=${selectedPackage?.price}&message=UC%20${selectedPackage?.amount}%20-%20ID:%20${playerId}`;
-      window.open(donationUrl, '_blank');
-      
-      const newPurchase: Purchase = {
-        id: Date.now().toString(),
-        date: new Date().toISOString(),
-        amount: selectedPackage?.amount || 0,
-        price: selectedPackage?.price || 0,
-        playerId: playerId,
-        paymentMethod: paymentNames[paymentMethod],
-        status: 'pending'
-      };
+    const updatedHistory = [newPurchase, ...purchaseHistory];
+    setPurchaseHistory(updatedHistory);
+    localStorage.setItem('ucShopHistory', JSON.stringify(updatedHistory));
 
-      const updatedHistory = [newPurchase, ...purchaseHistory];
-      setPurchaseHistory(updatedHistory);
-      localStorage.setItem('ucShopHistory', JSON.stringify(updatedHistory));
-
-      toast({
-        title: 'Переход к оплате! 💳',
-        description: `Завершите оплату на DonationAlerts. UC придут после подтверждения.`,
-      });
-    } else {
-      const newPurchase: Purchase = {
-        id: Date.now().toString(),
-        date: new Date().toISOString(),
-        amount: selectedPackage?.amount || 0,
-        price: selectedPackage?.price || 0,
-        playerId: playerId,
-        paymentMethod: paymentNames[paymentMethod],
-        status: 'completed'
-      };
-
-      const updatedHistory = [newPurchase, ...purchaseHistory];
-      setPurchaseHistory(updatedHistory);
-      localStorage.setItem('ucShopHistory', JSON.stringify(updatedHistory));
-
-      toast({
-        title: 'Заказ оформлен! 🎮',
-        description: `${selectedPackage?.amount} UC будут зачислены на ID: ${playerId}. Оплата: ${paymentNames[paymentMethod]}`,
-      });
-    }
+    toast({
+      title: 'Переход к оплате! 💳',
+      description: `Завершите оплату на DonationAlerts. UC придут после подтверждения.`,
+    });
     
     setIsDialogOpen(false);
     setPlayerId('');
-    setPaymentMethod('sberbank');
     setSelectedPackage(null);
   };
 
@@ -243,7 +213,6 @@ export default function Index() {
                     if (!open) {
                       setIsDialogOpen(false);
                       setPlayerId('');
-                      setPaymentMethod('sberbank');
                     }
                   }}>
                     <DialogTrigger asChild>
@@ -279,73 +248,7 @@ export default function Index() {
                             Найти Player ID можно в настройках игры
                           </p>
                         </div>
-                        <div className="space-y-3">
-                          <Label>Способ оплаты</Label>
-                          <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-                            <div className="flex items-center space-x-3 border border-border rounded-lg p-3 hover:bg-muted/50 transition-colors cursor-pointer">
-                              <RadioGroupItem value="sberbank" id="sberbank" />
-                              <Label htmlFor="sberbank" className="flex items-center gap-3 cursor-pointer flex-1">
-                                <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
-                                  <Icon name="CreditCard" className="text-white" size={20} />
-                                </div>
-                                <div className="flex-1">
-                                  <div className="font-semibold">Карта Сбербанк</div>
-                                  <div className="text-xs text-muted-foreground">Быстрая оплата</div>
-                                </div>
-                                <Badge className="bg-primary/20 text-primary">Популярно</Badge>
-                              </Label>
-                            </div>
-                            <div className="flex items-center space-x-3 border border-border rounded-lg p-3 hover:bg-muted/50 transition-colors cursor-pointer">
-                              <RadioGroupItem value="card" id="card" />
-                              <Label htmlFor="card" className="flex items-center gap-3 cursor-pointer flex-1">
-                                <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
-                                  <Icon name="CreditCard" className="text-primary" size={20} />
-                                </div>
-                                <div className="flex-1">
-                                  <div className="font-semibold">Банковская карта</div>
-                                  <div className="text-xs text-muted-foreground">Visa, MasterCard, Мир</div>
-                                </div>
-                              </Label>
-                            </div>
-                            <div className="flex items-center space-x-3 border border-border rounded-lg p-3 hover:bg-muted/50 transition-colors cursor-pointer">
-                              <RadioGroupItem value="wallet" id="wallet" />
-                              <Label htmlFor="wallet" className="flex items-center gap-3 cursor-pointer flex-1">
-                                <div className="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center">
-                                  <Icon name="Wallet" className="text-secondary" size={20} />
-                                </div>
-                                <div className="flex-1">
-                                  <div className="font-semibold">Электронный кошелек</div>
-                                  <div className="text-xs text-muted-foreground">ЮMoney, QIWI</div>
-                                </div>
-                              </Label>
-                            </div>
-                            <div className="flex items-center space-x-3 border border-border rounded-lg p-3 hover:bg-muted/50 transition-colors cursor-pointer">
-                              <RadioGroupItem value="crypto" id="crypto" />
-                              <Label htmlFor="crypto" className="flex items-center gap-3 cursor-pointer flex-1">
-                                <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center">
-                                  <Icon name="Bitcoin" className="text-accent" size={20} />
-                                </div>
-                                <div className="flex-1">
-                                  <div className="font-semibold">Криптовалюта</div>
-                                  <div className="text-xs text-muted-foreground">BTC, ETH, USDT</div>
-                                </div>
-                              </Label>
-                            </div>
-                            <div className="flex items-center space-x-3 border border-border rounded-lg p-3 hover:bg-muted/50 transition-colors cursor-pointer">
-                              <RadioGroupItem value="donationalerts" id="donationalerts" />
-                              <Label htmlFor="donationalerts" className="flex items-center gap-3 cursor-pointer flex-1">
-                                <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
-                                  <Icon name="Heart" className="text-orange-500" size={20} />
-                                </div>
-                                <div className="flex-1">
-                                  <div className="font-semibold">DonationAlerts</div>
-                                  <div className="text-xs text-muted-foreground">Быстрый платеж</div>
-                                </div>
-                                <Badge className="bg-orange-500/20 text-orange-500">Новое</Badge>
-                              </Label>
-                            </div>
-                          </RadioGroup>
-                        </div>
+
                         <div className="bg-muted/50 p-4 rounded-lg space-y-2">
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Количество UC:</span>
@@ -365,11 +268,11 @@ export default function Index() {
                       </div>
                       <Button
                         onClick={handlePurchase}
-                        className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-lg py-6"
+                        className="w-full bg-orange-500 hover:bg-orange-600 text-white text-lg py-6"
                         size="lg"
                       >
-                        <Icon name="Zap" className="mr-2" size={20} />
-                        Оплатить {pkg.price}₽
+                        <Icon name="Heart" className="mr-2" size={20} />
+                        Оплатить через DonationAlerts
                       </Button>
                     </DialogContent>
                   </Dialog>
